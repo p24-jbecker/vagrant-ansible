@@ -1,0 +1,19 @@
+---
+mysql:
+  packages:
+    - mariadb-server
+    - mariadb-client
+    # or just use mysql
+    #- mysql-server
+    #- mysql-client
+    - python-mysqldb
+  charset: utf8mb4
+  port: 3306
+  socket: /var/run/mysqld/mysqld.sock
+  datadir: /var/lib/mysql
+  log_error: /var/log/mysql/error.log
+  pid_file: /var/run/mysqld/mysqld.pid
+  config_path: /etc/mysql/conf.d
+  root_password: root
+  users:
+    - { name: dbuser, password: 123, privileges: '*.*:ALL' }

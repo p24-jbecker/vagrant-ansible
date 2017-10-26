@@ -1,0 +1,33 @@
+---
+- name: Update APT package manager repositories cache
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install aptitude
+  become: true
+  apt:
+    name: aptitude
+
+- name: Upgrade installed packages
+  become: true
+  apt:
+    upgrade: safe
+
+- name: Install base packages
+  become: true
+  apt:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - python-pip
+    - cowsay          # it's probably important
+    - git-core
+    - git
+    - apt-transport-https
+    - lsb-release
+    - ca-certificates
+    - bzip2
+    - unzip
+    - ntpdate

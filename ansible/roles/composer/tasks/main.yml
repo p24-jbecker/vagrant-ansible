@@ -1,0 +1,33 @@
+---
+- name: check for composer installation
+  stat:
+    path: "{{ composer.path }}/composer"
+  register: composer_stat
+
+- name: install composer locally
+  become: true
+  shell: php -r "readfile('https://getcomposer.org/installer');" | php
+  args:
+    chdir: "{{ composer.path }}"
+    creates: "{{ composer.path }}/composer.phar"
+  when: not composer_stat.stat.exists
+
+- name: rename composer.phar
+  become: true
+  command: mv {{ composer.path }}/composer.phar {{ composer.path }}/composer
+  when: not composer_stat.stat.exists
+
+- name: set permissions on composer
+  become: true
+  file:
+    path: "{{ composer.path }}/composer"
+    mode: "a+x"
+  when: not composer_stat.stat.exists
+
+- name: "composer self-update"
+  composer:
+    command: self-update
+    global_command: yes
+  register: composer_self_update
+  when: composer.self_update
+  changed_when: "not composer_self_update.stdout|search('You are already using composer version')"

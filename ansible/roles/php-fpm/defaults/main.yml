@@ -1,0 +1,41 @@
+---
+php:
+  version: 7.1
+  repositories:
+    ppa:
+      - ppa:ondrej/php
+    deb:
+      - { key: "https://packages.sury.org/php/apt.gpg",
+          repo: "deb http://packages.sury.org/php/ {{ ansible_distribution_release }} main",
+          filename: php }
+  dependencies:
+    - apt-transport-https
+  packages:
+    - cli
+    - curl
+    - fpm
+    - intl
+    - mysql
+    - xml
+    - dev
+    - gd
+    - imagick
+    - imap
+    - mcrypt
+    - memcache
+    - soap
+    - bz2
+    - ldap
+    - xml
+    - mbstring
+    - bcmath
+    - zip
+  ini:
+    fpm:
+      - { section: Date, option: date.timezone, value: Europe/Berlin }
+      - { section: PHP, option: max_execution_time, value: 60 }
+      - { section: PHP, option: memory_limit, value: 512M }
+    cli:
+      - { section: Date, option: date.timezone, value: Europe/Berlin }
+      - { section: PHP, option: max_execution_time, value: 0 }
+      - { section: PHP, option: memory_limit, value: 512M }

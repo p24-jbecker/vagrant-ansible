@@ -1,0 +1,63 @@
+---
+- name: install dependencies
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: 'yes'
+  with_items: "{{ php.dependencies }}"
+
+- name: add php ppa repositories
+  become: true
+  apt_repository:
+    repo: "{{ item }}"
+  with_items: "{{ php.repositories.ppa }}"
+  when: ansible_distribution == 'Ubuntu'
+
+- name: add php deb repositories key
+  become: true
+  apt_key:
+    url: "{{ item.key }}"
+    state: present
+  with_items: "{{ php.repositories.deb }}"
+  when: ansible_distribution == 'Debian'
+
+- name: add php deb repositories
+  become: true
+  apt_repository:
+    repo: "{{ item.repo }}"
+    state: present
+    filename: "{{ item.filename }}"
+    update_cache: 'yes'
+  with_items: "{{ php.repositories.deb }}"
+  when: ansible_distribution == 'Debian'
+
+- name: install php packages
+  become: true
+  apt:
+    name: "php{{ php.version }}-{{ item}}"
+    state: latest
+  with_items: "{{ php.packages }}"
+  notify: restart php-fpm
+
+- name: configure php.ini for fpm
+  become: true
+  ini_file:
+    dest: /etc/php/{{ php.version }}/fpm/php.ini
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items: "{{ php.ini.fpm }}"
+  notify: restart php-fpm
+
+- name: configure php.ini for cli
+  become: true
+  ini_file:
+    dest: /etc/php/{{ php.version }}/cli/php.ini
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items: "{{ php.ini.cli }}"
+  notify: restart php-fpm
+
+- meta: flush_handlers

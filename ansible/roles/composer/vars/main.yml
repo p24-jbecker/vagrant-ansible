@@ -1,0 +1,5 @@
+---
+# vars file for php-fpm
+#
+# This playbook use dictionaries! Partially overriding defaults needs
+# 'hash_behaviour = merge' set in your ansible.cfg!

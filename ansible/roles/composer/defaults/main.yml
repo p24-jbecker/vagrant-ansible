@@ -1,0 +1,4 @@
+---
+composer:
+  path: /usr/local/bin
+  self_update: true

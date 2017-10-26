@@ -1,0 +1,129 @@
+---
+- name: install dependencies
+  become: true
+  apt:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - libxrender1
+    - libfontconfig1
+    - imagemagick
+    - inkscape
+    - libssl-dev
+    - rcconf
+    - lynx
+    - autoconf
+    - libmagickwand-dev
+    - pngnq
+    - pngcrush
+    - xvfb
+    - cabextract
+    - libfcgi0ldbl
+    - poppler-utils
+    - xz-utils
+    - libreoffice
+    - python-uno
+    - libreoffice-math
+    - xfonts-75dpi
+    - jpegoptim
+    - monit
+    - pigz
+    - libtext-template-perl
+    - mailutils
+
+- name: copy pimcore.sql
+  become: true
+  template:
+    src: pimcore.sql.j2
+    dest: /home/{{ ansible_user }}/pimcore.sql
+  when: pimcore.db.install
+
+- name: import pimcore.sql
+  mysql_db:
+    state: import
+    name: pimcore
+    target: /home/{{ ansible_user }}/pimcore.sql
+  when: pimcore.db.install
+
+- name: create project directory and set its permissions
+  become: true
+  file:
+    path: "{{ pimcore.dir.root }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: checkout git repository
+  become: true
+  git:
+    repo: https://github.com/Preis24/pimcore.git
+    dest: "{{ pimcore.dir.root }}"
+    force: yes
+    update: yes
+    version: "{{ pimcore.git_branch }}"
+  register: repo_code
+
+- name: copy system.php
+  become: true
+  template:
+    src: templates/system.php.j2
+    dest: "{{ pimcore.dir.var }}/config/system.php"
+
+- name: register code_changed variable
+  set_fact:
+    code_changed: repo_code.changed
+
+- name: install composer's dependencies
+  become: true
+  composer:
+    working_dir: "{{ pimcore.dir.root }}"
+    no_dev: no
+
+- name: fix var directory permissions
+  become: true
+  file:
+    path: "{{ pimcore.dir.var }}"
+    state: directory
+    mode: 0775
+    recurse: yes
+  changed_when: false
+
+- name: clear symfony cache
+  become: true
+  command: '{{ pimcore.dir.console }} cache:clear'
+  when: code_changed
+
+- name: set permissions on project directory
+  become: true
+  file:
+    path: "{{ pimcore.dir.root }}"
+    owner: www-data
+    group: www-data
+    recurse: true
+
+- name: reset admin password
+  command: '{{ pimcore.dir.console }} pimcore:user:reset-password admin -p demo'
+
+- name: migrate calss definitions
+  become: true
+  command: '{{ pimcore.dir.console }} deployment:classes-rebuild -c'
+
+- name: import eam articles
+  become: true
+  command: '{{ pimcore.dir.console }} import:eam:articles'
+  when: pimcore.import_data
+
+- name: import eam article details
+  become: true
+  command: '{{ pimcore.dir.console }} import:eam:article-details'
+  when: pimcore.import_data
+
+- name: import eam tariffs
+  become: true
+  command: '{{ pimcore.dir.console }} import:eam:tariffs'
+  when: pimcore.import_data
+
+- name: import eam article tariff combinations
+  become: true
+  command: '{{ pimcore.dir.console }} import:eam:combinations'
+  when: pimcore.import_data

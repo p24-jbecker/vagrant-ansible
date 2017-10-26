@@ -1,0 +1,117 @@
+---
+  ##
+  # This task is a little bit specific for my personal development use cases
+  # php_version is used in templates for php-fpm configurations
+  #
+  # @todo find a better way to implement this or to be rendered superfluous
+- name: "set php version"
+  set_fact:
+    php_version: "{{ php.version }}"
+  when: php is defined and php.version is defined
+  tags:
+    - todo
+
+- name: add nginx mainline deb repositories key
+  become: true
+  apt_key:
+    url: http://nginx.org/keys/nginx_signing.key
+    state: present
+
+- name: add nginx mainline deb repositories key
+  become: true
+  apt_repository:
+    repo: 'deb http://nginx.org/packages/mainline/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release|lower }} nginx'
+    state: present
+    filename: 'nginx'
+    update_cache: 'yes'
+
+- name: install nginx
+  become: true
+  apt:
+    name: nginx
+    state: latest
+
+- name: configure nginx
+  become: true
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: restart nginx
+
+- name: create sites-enabled
+  become: true
+  file:
+    path: /etc/nginx/sites-enabled/
+    state: directory
+
+- name: create sites-available
+  become: true
+  file:
+    path: /etc/nginx/sites-available/
+    state: directory
+
+- name: remove default.conf
+  become: true
+  file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+
+- name: add host config to nginx available sites
+  become: true
+  template:
+    src: "{{ item.block_template }}.block.conf.j2"
+    dest: /etc/nginx/sites-available/{{ item.host_name }}.conf
+  with_items: "{{ nginx.sites }}"
+  notify: restart nginx
+
+- name: link vhost config to nginx enabled sites
+  become: true
+  file:
+    src: /etc/nginx/sites-available/{{ item.host_name }}.conf
+    dest: /etc/nginx/sites-enabled/{{ item.host_name }}.conf
+    state: link
+  with_items: "{{ nginx.sites }}"
+  notify: restart nginx
+
+- name: add enabled nginx site to /etc/hosts
+  become: true
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "127.0.0.1 {{ item.host_name }}"
+    line: "127.0.0.1 {{ item.host_name }}"
+    unsafe_writes: true
+  with_items: "{{ nginx.sites }}"
+  notify: restart nginx
+
+- name: get stat for ssl certificates
+  stat:
+    path: /etc/nginx/ssl/${ansible_fqdn}-selfsigned.key
+  register: ssl_stat
+
+- name: set stat for ssl certificates
+  set_fact:
+    has_ssl: "{{ ssl_stat.stat.exists }}"
+
+- name: create directory for ssl certificates
+  become: true
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+
+- name: copy dhparam.pem for strong encryption
+  become: true
+  copy:
+    src: dhparam.pem
+    dest: /etc/nginx/ssl/dhparam.pem
+
+- name: create self-signed SSL cert
+  become: true
+  command: >
+    openssl req -x509 -nodes -days 3650 -newkey rsa:4096
+    -subj "/C=DE/ST=NRW/L=Duesseldorf/O=IT/CN=${ansible_fqdn}"
+    -keyout /etc/nginx/ssl/${ansible_fqdn}-selfsigned.key
+    -out /etc/nginx/ssl/${ansible_fqdn}-selfsigned.crt
+  when: has_ssl == false
+  notify: restart nginx
+
+- meta: flush_handlers

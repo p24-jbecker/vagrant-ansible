@@ -1,0 +1,12 @@
+[client]
+default-character-set = {{ mysql.charset }}
+port = {{ mysql.port }}
+socket = {{ mysql.socket }}
+
+[mysqld]
+character-set-server =  {{ mysql.charset }}
+datadir = {{ mysql.datadir }}
+log_error = {{ mysql.log_error }}
+pid-file = {{ mysql.pid_file }}
+port = {{ mysql.port }}
+socket = {{ mysql.socket }}

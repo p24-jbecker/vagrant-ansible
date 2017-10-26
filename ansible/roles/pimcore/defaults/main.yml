@@ -1,0 +1,18 @@
+---
+pimcore:
+    dir:
+        root: /var/www/pimcore
+        web: /var/www/pimcore/web
+        var: /var/www/pimcore/var
+        console: /var/www/pimcore/bin/console
+    db:
+        host: 35.198.177.110
+        port: 3306
+        name: pimcore
+        user: pimcore
+        password: v#9Vr%xQ!6k7
+        install: true
+
+    import_data: true
+    environment: prod
+    git_branch: development

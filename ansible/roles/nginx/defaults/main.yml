@@ -1,0 +1,8 @@
+---
+nginx:
+  user: www-data
+  group: www-data
+  sites:
+    - host_name: example.com
+      document_root: /var/www/example.com
+      block_template: static

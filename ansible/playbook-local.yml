@@ -1,0 +1,16 @@
+#!/usr/bin/env ansible-playbook
+
+- name: Actions on host system
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - copy:
+        src: ../.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory
+        dest: ../ansible/inventory/vagrant_ansible_inventory
+
+    #- name: Add enabled Nginx site to /etc/hosts
+    #  become: true
+    #  lineinfile:
+    #    dest: /etc/hosts
+    #    regexp: "{{ server_name }}"
+    #    line: "127.0.0.1 {{ server_name }}"

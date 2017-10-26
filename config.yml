@@ -1,0 +1,37 @@
+---
+playbook: ./playbook.yml
+playbook_local: ./playbook-local.yml
+provider: virtualbox                                # parallels google
+output: false                                       # -v -vv -vvv false
+run_local: false                                    # run local playbook
+ssh:                                                # used for cloud deployment / gce
+  user: jbecker
+  key_file: ~/.ssh/id_rsa
+machine:
+  name: pimcore
+  box: bento/debian-8.7
+  hostname: pimcore.local
+  cpus: 2
+  memory: 2048
+  ip: 192.168.0.40
+  host_vars:
+    mysql:
+      packages:
+        - mariadb-server
+        - mariadb-client
+        - python-mysqldb
+      charset: utf8mb4
+      port: 3306
+      users:
+        - { name: pimcore, password: pimcore, privileges: '*.*:ALL' }
+    nginx:
+      user: www-data
+      group: www-data
+      sites:
+        - host_name: localhost
+          document_root: /var/www/pimcore/web
+          block_template: pimcore
+          environment:
+            APP_ENV: development
+  host_groups:
+    - pimcore

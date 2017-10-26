@@ -1,0 +1,91 @@
+---
+- name: install packages
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+  with_items: "{{ mysql.packages }}"
+  notify:
+    - restart mysql
+
+- meta: flush_handlers
+
+- name: wait for mysql
+  wait_for:
+    port: "{{ mysql.port }}"
+
+- name: set root password
+  become: true
+  become_method: sudo
+  mysql_user:
+    name: root
+    password: "{{ mysql.root_password }}"
+    host: "{{ item }}"
+    state: present
+  with_items:
+    - '::1'
+    - '127.0.0.1'
+    - 'localhost'
+
+- stat:
+    path: "{{ mysql.config_path }}/my.cnf"
+  register: my_cnf
+
+- name: configure my.cnf
+  become: true
+  template:
+    src: config-my.cnf.j2
+    dest: "{{ mysql.config_path }}/my.cnf"
+  when: not my_cnf.stat.exists
+
+- stat:
+    path: /root/.my.cnf
+  become: true
+  become_method: sudo
+  register: my_cnf
+
+- name: copy .my.cnf file for root
+  become: true
+  become_method: sudo
+  template:
+    src: user-my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: 0600
+  when: not my_cnf.stat.exists
+
+- name: copy .my.cnf in user home
+  template:
+    src: user-my.cnf.j2
+    dest: ~/.my.cnf
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: 0644
+
+- name: Reload privilege tables
+  become: true
+  become_method: sudo
+  command: 'mysql -ne "{{ item }}"'
+  with_items:
+    - FLUSH PRIVILEGES
+  changed_when: false
+
+- name: create users
+  become: true
+  become_method: sudo
+  mysql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    priv: "{{ item.privileges | default('*.*:ALL') }}"
+    state: present
+  with_items: "{{ mysql.users }}"
+
+- name: remove anonymous users
+  become: true
+  become_method: sudo
+  mysql_user:
+    name: ''
+    host_all: yes
+    state: absent

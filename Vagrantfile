@@ -32,16 +32,16 @@ config = YAML.load_file "#{dir}/config.yml"
 Vagrant.configure("2") do |vagrant|
     settings = config["machine"]
     # These values are the default options
-      vagrant.bindfs.default_options = {
-        force_user:   'vagrant',
-        force_group:  'vagrant',
-        perms:        'u=rwX:g=rD:o=rD',
-      }
+    vagrant.bindfs.default_options = {
+      force_user:   'vagrant',
+      force_group:  'vagrant',
+      perms:        'u=rwX:g=rD:o=rD',
+    }
 
     #vagrant.vm.synced_folder "/Users/jbecker/projects/share", "/home/vagrant/nfs", type: :nfs
     #vagrant.bindfs.bind_folder "/vagrant-nfs", "/var/www/project", o:"nonempty", after: :provision
 
-    if settings['provider']['name'] == "google"
+    if settings['provider'] == "google"
       vagrant.vm.provider :google do |google, override|
         google.google_project_id = "balmy-visitor-168516"
         google.google_client_email = "pimcore-deploy@balmy-visitor-168516.iam.gserviceaccount.com"
@@ -63,7 +63,7 @@ Vagrant.configure("2") do |vagrant|
       end
     end
 
-    if settings['provider']['name'] == "parallels"
+    if settings['provider'] == "parallels"
         vagrant.vm.provider :parallels do |parallels|
           parallels.update_guest_tools = false
           parallels.memory = settings["memory"]
@@ -71,7 +71,7 @@ Vagrant.configure("2") do |vagrant|
         end
     end
 
-    if settings['provider']['name'] == "virtualbox"
+    if settings['provider']  == "virtualbox"
         vagrant.vm.provider :parallels do |parallels|
           parallels.memory = settings["memory"]
           parallels.cpus = settings["cpus"]

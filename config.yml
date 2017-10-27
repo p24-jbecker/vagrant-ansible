@@ -5,8 +5,8 @@ provider: virtualbox                                # parallels google
 output: false                                       # -v -vv -vvv false
 run_local: false                                    # run local playbook
 ssh:                                                # used for cloud deployment / gce
-  user: jbecker
-  key_file: ~/.ssh/id_rsa
+  user: ''                                          # set ssh user
+  key_file: ''                                      # path to your private key
 machine:
   name: pimcore
   box: bento/debian-8.7
